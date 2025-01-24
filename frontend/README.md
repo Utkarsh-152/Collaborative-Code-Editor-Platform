@@ -105,5 +105,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-GNU GENERAL PUBLIC LICENSE
-
+This project is licensed under the ISC License.
