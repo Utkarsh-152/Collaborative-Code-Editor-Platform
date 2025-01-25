@@ -46,6 +46,7 @@ const Project = () => {
   const [openFiles, setOpenFiles] = useState([]);
   const [webContainer, setWebContainer] = useState(null)
   const [iframeURL, setIframeURL] = useState(null)
+  const [runProcess, setRunProcess] = useState(null)
 
   useEffect(() => {
     // Initialize socket connection for real-time updates
@@ -392,16 +393,13 @@ const Project = () => {
 
                 
             <div className="code-editor h-full p-2 flex flex-col flex-grow">
-              {iframeURL && webContainer && 
-                <iframe src={iframeURL} className="w-1/2 h-full"></iframe>
-              }
                 <div className="top flex items-center p-2 rounded-md">
                     <div className='files flex'>  
                     {openFiles.map((file, index) => (
                         <div className="flex items-center gap-2">
                             <button 
                                 onClick={() => setCurrentFile(file)}
-                                className="text-gray-300 text-md p-2 font-semibold">{file}</button> 
+                                className="text-emerald-400 rounded-md bg-emerald-600/20 text-md ml-2 p-2 font-semibold">{file}</button> 
                             <button 
                                 onClick={() => setOpenFiles(prevOpenFiles => prevOpenFiles.filter(f => f !== file))}
                                 className="bg-emerald-600 px-2 py-1 rounded-md hover:bg-emerald-500 transition-all duration-300 group shadow-lg hover:shadow-emerald-900/20">
@@ -441,13 +439,19 @@ const Project = () => {
                                     // Wait for install to complete before running start
                                     await installProcess.exit;
 
+                                    if (runProcess) {
+                                        runProcess.kill()
+                                    }
                                     // Run npm start
-                                    const runProcess = await webContainer?.spawn('npm', ['start']);
-                                    runProcess.output.pipeTo(new WritableStream({
+                                    let tempRunProcess = await webContainer?.spawn('npm', ['start']);
+
+                                    tempRunProcess.output.pipeTo(new WritableStream({
                                         write(chunk) {
                                             console.log(chunk);
                                         }
                                     }));
+
+                                    setRunProcess(tempRunProcess)
 
                                     webContainer.on('server-ready', (port, url) => {
                                         setIframeURL(url);
@@ -474,6 +478,7 @@ const Project = () => {
                                     const ft = {
                                         ...fileTree,
                                         [currentFile]: {
+                                            ...fileTree[currentFile],
                                             file: {
                                                 contents: updatedContent
                                             }
@@ -495,6 +500,20 @@ const Project = () => {
                     )} 
                 </div>
             </div>
+            {iframeURL && webContainer && (
+                <div className='w-1/2 h-full flex flex-col bg-white'>
+                  <div className='address-bar flex items-center justify-center p-2 bg-white'>
+                      <input type="text" 
+                      className='w-full p-2 bg-white' 
+                      placeholder={`${iframeURL}`} 
+                      value={iframeURL}
+                      onChange={(e) => setIframeURL(e.target.value)}
+                      />
+                  </div>
+                    <iframe src={iframeURL} className="w-full h-full bg-white"></iframe>
+                </div>
+              )
+            }
               
         </section>
       
